@@ -40,6 +40,14 @@ namespace create {
     vel.x = 0;
     vel.y = 0;
     vel.yaw = 0;
+    
+    distSum = 0.0;
+    yawSum = 0.0;
+    dtSum = 0.0;
+    vel_p.x = 0.0;
+    vel_p.y = 0.0;
+    vel_p.yaw = 0.0;
+
     vel.covariance = std::vector<float>(9, 0.0);
     poseCovar = Matrix(3, 3, 0.0);
     requestedLeftVel = 0;
@@ -91,6 +99,16 @@ namespace create {
 
   void Create::onData() {
     if (firstOnData) {
+
+      distSum = 0.0;
+      yawSum = 0.0;
+      dtSum = 0.0;
+      vel_p.x = 0.0;
+      vel_p.y = 0.0;
+      vel_p.yaw = 0.0;
+
+      oldTime = util::getTimestamp();
+
       if (model.getVersion() >= V_3) {
         // Initialize tick counts
         prevTicksLeft = GET_DATA(ID_LEFT_ENC);
@@ -186,6 +204,39 @@ namespace create {
     totalLeftDist += leftWheelDist;
     totalRightDist += rightWheelDist;
 
+//    std::cout << deltaDist << "  " << dt << "  " << curTime << std::endl;
+
+    util::timestamp_t interval_u = 0.4 * 1000000;
+
+    distSum += deltaDist;
+    yawSum += deltaYaw;
+    dtSum += dt;
+
+    if(curTime - oldTime > interval_u) {
+      if(dtSum == 0.0) std::cout << "error1";
+
+      vel.x = distSum / dtSum;
+      vel.y = 0.0;
+      vel.yaw = yawSum / dtSum;      
+
+      distSum = 0.0;
+      yawSum = 0.0;
+      dtSum = 0.0;
+
+      vel_p.x = vel.x;
+      vel_p.y = vel.y;
+      vel_p.yaw = vel.yaw;
+
+      oldTime += interval_u;
+    }
+    else {
+      vel.x = vel_p.x;
+      vel.y = vel_p.y;
+      vel.yaw = vel_p.yaw;
+    }      
+
+/*
+
     if (fabs(dt) > util::EPS) {
       vel.x = deltaDist / dt;
       vel.y = 0.0;
@@ -195,6 +246,7 @@ namespace create {
       vel.y = 0.0;
       vel.yaw = 0.0;
     }
+*/
 
     // Update covariances
     // Ref: "Introduction to Autonomous Mobile Robots" (Siegwart 2004, page 189)

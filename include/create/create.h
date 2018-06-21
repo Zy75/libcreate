@@ -88,6 +88,12 @@ namespace create {
       float requestedLeftVel;
       float requestedRightVel;
 
+      float yawSum;
+      float distSum;
+      float dtSum;
+      util::timestamp_t oldTime;
+      create::Vel vel_p;
+
       void init();
       // Add two matrices and handle overflow case
       Matrix addMatrices(const Matrix &A, const Matrix &B) const;
